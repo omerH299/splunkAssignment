@@ -27,16 +27,6 @@
           SPLUNK_START_ARGS: "--accept-license"
           SPLUNK_PASSWORD: "splunkAdmin"
 
-    - name: Copy SSL certificate to Splunk container
-      copy:
-        src: /home/ubuntu/splunkCert.pem
-        dest: /opt/splunk/etc/auth/
-        owner: splunk
-        group: splunk
-        mode: '0644'
-      become: true
-      become_user: root
-
     - name: Configure Splunk to use SSL certificate
       shell: >
         docker exec -u splunk splunk /opt/splunk/bin/splunk set ssl-config --cert /opt/splunk/etc/auth/splunkCert.pem
