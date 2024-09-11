@@ -1,0 +1,45 @@
+---
+- name: Splunk setup and certification installation
+  hosts: localhost
+  become: true
+  tasks:
+
+    - name: Pull Splunk Docker image
+      docker_image:
+        name: splunk/splunk
+        source: pull
+        tag: latest
+
+    - name: Run Splunk container
+      docker_container:
+        name: splunk
+        image: splunk/splunk:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "8000:8000"  # Splunk Web UI
+          - "8089:8089"  # Splunk Management Port
+          - "9997:9997"  # Splunk Data Ingestion
+        volumes:
+          - /home/ubuntu/splunkCert.pem:/opt/splunk/etc/auth/splunkCert.pem  # Mount certificate directly
+          - /var/log/nginx:/var/log/nginx  
+        env:
+          SPLUNK_START_ARGS: "--accept-license"
+          SPLUNK_PASSWORD: "splunkAdmin"
+
+    - name: Copy SSL certificate to Splunk container
+      copy:
+        src: /home/ubuntu/splunkCert.pem
+        dest: /opt/splunk/etc/auth/
+        owner: splunk
+        group: splunk
+        mode: '0644'
+      become: true
+      become_user: root
+
+    - name: Configure Splunk to use SSL certificate
+      shell: >
+        docker exec -u splunk splunk /opt/splunk/bin/splunk set ssl-config --cert /opt/splunk/etc/auth/splunkCert.pem
+        && docker exec -u splunk splunk /opt/splunk/bin/splunk restart
+      become: true
+      become_user: root

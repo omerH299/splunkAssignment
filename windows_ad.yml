@@ -1,0 +1,23 @@
+---
+- name: Install AD, Setup Domain, Install Certification Authority and generate cert for splunk
+  hosts: windows
+  tasks:
+    - name: Install AD Domain Services
+      win_feature:
+        name: AD-Domain-Services
+        state: present
+
+    - name: Promote to Domain Controller
+      microsoft.ad.domain:
+        dns_domain_name: "mydomain.local"
+        safe_mode_password: "SuperSecretPassword123!"
+
+    - name: Install Certification Authority
+      win_feature:
+        name: ADCS-Cert-Authority
+        state: present
+
+    - name: Generate a certificate for Splunk
+      win_shell: |
+        New-SelfSignedCertificate -DnsName "splunk.mydomain.local" -CertStoreLocation "cert:\LocalMachine\My"      
+
